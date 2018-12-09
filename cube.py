@@ -41,7 +41,7 @@ class Cube(dict):
         self.undo_rotate_log = []
         self.undo_turn_log = []
         # self.turns = [['f', 'b', 'u', 'd', 'r', 'l', 'x', 'y', 'z'], ['', '2'], ['', '`']]
-        self.turns = [['f', 'b', 'u', 'd', 'r', 'l'], ['', '2'], ['', '`']]
+        self.turns = [['f', 'b', 'u', 'd', 'r', 'l'], ['', '2'], ['', '-']]
 
     def create(self):
         face_maps = {'f': red, 'r': green, 'l': blue, 'u': yellow, 'b': orange, 'd': white}
@@ -55,8 +55,10 @@ class Cube(dict):
             print('Scrambling')
             print(cube)
             turn = self.random_turn()
-            print(turn)
-            self.turn(turn)
+            while not turn:
+                turn = self.random_turn()
+            for i in range(turn['double']):
+                self.turn(turn['face'], turn['direction'], turn['inner'])
             sleep(time)
         bash('clear')
         print(cube)
@@ -67,45 +69,44 @@ class Cube(dict):
             print('Solving')
             print(cube)
             turn = self.undo_turn_log.pop()
-            print(turn)
-            self.turn(turn, log_undo = False)
+            turn = input_to_turn(turn, self.order)
+            for i in range(turn['double']):
+                self.turn(turn['face'], turn['direction'], turn['inner'], log_undo = False)
             sleep(time)
         bash('clear')
         print(cube)
 
     def random_turn(self):
-        return random.choice(self.turns[0]) + random.choice(self.turns[1]) + random.choice(self.turns[2])
+        inner = '' if self.order < 4 else str(random.choice(['', random.randint(2, self.order // 2)]))
+        face = random.choice(self.turns[0])
+        direction = random.choice(self.turns[2])
+        double = random.choice(self.turns[1])
+        inp = inner + face + double + direction
+        return input_to_turn(inp, self.order)
 
-    def turn(self, sides, log_undo = True):
-        if not isinstance(sides, list):
-            sides = [sides]
+    def turn(self, face, direction, inner, log_undo = True):
+        print(inner + face + direction)
+        if log_undo:
+            undo_turn = inner + face
+            undo_turn += '-' if direction == '+' else ''
+            self.undo_turn_log.append(undo_turn)
 
-        rotation = '+'
-        for side in sides:
-            if log_undo:
-                undo_turn = side[:-1] if side[-1] == '`' else side + '`'
-                self.undo_turn_log.append(undo_turn)
+        self.rotate_cube(face, direction)
 
-            if '`' in side:
-                rotation = '-'
-            double = 2 if '2' in side else 1
-            side = side[0]
-            for i in range(double):
-                self.rotate_cube(side, rotation)
+        if face in ['x', 'y', 'z']:
+            return
 
-                if side in ['x', 'y', 'z']:
-                    continue
+        u = self['u'].side('d', inner)
+        r = self['r'].side('l', inner)
+        d = self['d'].side('u', inner)
+        l = self['l'].side('r', inner)
 
-                u = self['u'].side('d')
-                r = self['r'].side('l')
-                d = self['d'].side('u')
-                l = self['l'].side('r')
-                f = self['f']
+        for i in range(self.order):
+            self.rotate([u[i], r[i], d[(i + 1) * -1], l[(i + 1) * -1]], direction)
+        if not inner:
+            self.rotate_face('f', direction)
 
-                for i in range(self.order):
-                    self.rotate([u[i], r[i], d[(i + 1) * -1], l[(i + 1) * -1]], rotation)
-                self.rotate_face('f', rotation)
-                self.undo_rotation()
+        self.undo_rotation()
 
     def rotate(self, org_tiles, direction):
         tiles = org_tiles if direction == '-' else org_tiles[::-1]
@@ -134,10 +135,10 @@ class Cube(dict):
     def face_print(self, face):
         self.rotate_cube(face)
 
-        u = 2 * ' ' + self['u'].side_to_str('d')
-        d = 2 * ' ' + self['d'].side_to_str('u')
-        r = self['r'].side_to_str('l')
-        l = self['l'].side_to_str('r')
+        u = 2 * ' ' + self['u'].side_to_str('d', '')
+        d = 2 * ' ' + self['d'].side_to_str('u', '')
+        r = self['r'].side_to_str('l', '')
+        l = self['l'].side_to_str('r', '')
         f = str(self['f'])
         mid = self.f_zip(self.f_zip(l, f), r)
 
@@ -272,18 +273,19 @@ class Face(list):
             ret = ret[:-1] + '\n'
         return ret[:-1]
 
-    def side(self, s):
+    def side(self, s, level):
+        level = int(level) - 1 if level else 0
         if s == 'l':
-            return [tiles[0] for tiles in self]
+            return [tiles[level] for tiles in self]
         elif s == 'r':
-            return [tiles[-1] for tiles in self]
+            return [tiles[-1 * (level + 1)] for tiles in self]
         elif s == 'u':
-            return [tile for tile in self[0]]
+            return [tile for tile in self[level]]
         elif s == 'd':
-            return [tile for tile in self[-1]]
+            return [tile for tile in self[-1 * (level + 1)]]
 
-    def side_to_str(self, s):
-        tiles = self.side(s)
+    def side_to_str(self, s, level):
+        tiles = self.side(s, level)
         if s in ['l', 'r']:
             return '\n'.join([str(tile) for tile in tiles])
         elif s in ['u', 'd']:
@@ -312,9 +314,43 @@ def bash(cmd):
     # p = subprocess.Popen([cmd], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # return tuple([e.decode('utf-8').rstrip() for e in t] for t in [x.readlines() for x in [p.stdout, p.stderr]])
 
+def input_to_turn(inp, order):
+    inner = ''
+    import inspect
+    if not re.match(r'^(f|b|u|d|r|l|x|y|z|m|e|s)$', inp[0]):
+        inner = re.match(r'^\d+', inp)
+        if inner:
+            inner = inner.group()
+            inner = inp[:len(inner)]
+            inp = inp[len(inner):]
+        else:
+            inspect.getframeinfo(inspect.currentframe()).lineno
+            return None
+        if not inp or not re.match(r'^(f|b|u|d|r|l|x|y|z|m|e|s)$', inp[0]):
+            inspect.getframeinfo(inspect.currentframe()).lineno
+            return None
+
+    face = inp[0]
+    inp = inp[1:]
+    if face in "mes":
+        inner = str((order // 2) + 1)
+        face = {'m': 'l', 'e': 'd', 's': 'd'}[face]
+    elif len(inner) and int(inner) <= order // 2:
+        inspect.getframeinfo(inspect.currentframe()).lineno
+        return None
+
+    inp = ''.join(list(map(lambda x: "-" if x in "'`-" else x, inp)))
+    if len(inp) and not re.match(r'^2?-?$', inp):
+        return None
+
+    double = 2 if re.match(r'2', inp) else 1
+    direction = '-' if len(inp) and re.match(re.escape("-"), inp[-1]) else '+'
+    
+    return {'face': face, 'direction': direction, 'inner': inner, 'double': double}
+
 if __name__ == '__main__':
     try:
-        cube = Cube(3)
+        cube = Cube(5)
         while(1):
             bash('clear')
             print(cube)
@@ -325,8 +361,14 @@ if __name__ == '__main__':
                     exit(0)
                 if not inp:
                     continue
+                if inp == 'show':
+                    print(cube)
+                    continue
                 if inp == 'solve' or inp == 'sol':
-                    cube.solve(time = 0.05)
+                    cube.solve(time = 0.1)
+                    continue
+                if inp == 'scramble' or inp == 'scr':
+                    cube.scramble(10, time = 0.1)
                     continue
                 if inp == 'turns' or inp == 'tur':
                     print(cube.undo_turn_log)
@@ -336,16 +378,12 @@ if __name__ == '__main__':
                     print('Cube size: ', end='')
                     inp = input()
                     cube = Cube(int(inp))
-                if inp == 'scramble' or inp == 'scr':
-                    cube.scramble(100, time = 0.05)
-                    continue
 
-                inp = ''.join(list(map(lambda x: "`" if x == "'" else x, inp)))
-                if not re.match(r'^(f|b|u|d|r|l|x|y|z)$', inp[0]):
+                turn = input_to_turn(inp, cube.order)
+                if not turn:
                     continue
-                if len(inp) > 1 and not re.match(r'^2?`?$', inp[1:]):
-                    continue
-                cube.turn(inp)
+                for i in range(turn['double']):
+                    cube.turn(turn['face'], turn['direction'], turn['inner'])
 
     except Exception as e:
         print(format_exc())
