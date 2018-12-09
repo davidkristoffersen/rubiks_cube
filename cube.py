@@ -40,8 +40,7 @@ class Cube(dict):
         self.create()
         self.undo_rotate_log = []
         self.undo_turn_log = []
-        # self.turns = [['f', 'b', 'u', 'd', 'r', 'l', 'x', 'y', 'z'], ['', '2'], ['', '`']]
-        self.turns = [['f', 'b', 'u', 'd', 'r', 'l'], ['', '2'], ['', '-']]
+        self.turns = [['f', 'b', 'u', 'd', 'r', 'l', 'm', 'e', 's'], ['', '2'], ['', '-']]
 
     def create(self):
         face_maps = {'f': red, 'r': green, 'l': blue, 'u': yellow, 'b': orange, 'd': white}
@@ -58,7 +57,7 @@ class Cube(dict):
             while not turn:
                 turn = self.random_turn()
             for i in range(turn['double']):
-                self.turn(turn['face'], turn['direction'], turn['inner'])
+                self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'])
             sleep(time)
         bash('clear')
         print(cube)
@@ -71,21 +70,41 @@ class Cube(dict):
             turn = self.undo_turn_log.pop()
             turn = input_to_turn(turn, self.order)
             for i in range(turn['double']):
-                self.turn(turn['face'], turn['direction'], turn['inner'], log_undo = False)
+                self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'], log_undo = False)
             sleep(time)
         bash('clear')
         print(cube)
 
     def random_turn(self):
         inner = '' if self.order < 4 else str(random.choice(['', random.randint(2, self.order // 2)]))
+        together = '' if not inner else random.choice(['', 'w'])
         face = random.choice(self.turns[0])
         direction = random.choice(self.turns[2])
         double = random.choice(self.turns[1])
-        inp = inner + face + double + direction
+        inp = inner + face + together + double + direction
         return input_to_turn(inp, self.order)
 
-    def turn(self, face, direction, inner, log_undo = True):
+    def turn_s(self, undo):
+        self.turn('x', '+', '', '', log_undo = undo)
+        self.turn('d', '+', str((self.order // 2) + 1), '', log_undo = undo)
+        self.turn('x', '-', '', '', log_undo = undo)
+
+    def turn_w(self, face, direction, inner, undo):
+        inner = 1 if not inner else int(inner)
+        for inner in range(1, inner + 1):
+            if inner == 1:
+                inner = ''
+            self.turn(face, direction, str(inner), '', log_undo = undo)
+
+    def turn(self, face, direction, inner, together, log_undo = True):
         print(inner + face + direction)
+        if face == 's':
+            self.turn_s(log_undo)
+            return
+        if together == 'w':
+            self.turn_w(face, direction, inner, log_undo)
+            return
+
         if log_undo:
             undo_turn = inner + face
             undo_turn += '-' if direction == '+' else ''
@@ -236,16 +255,20 @@ class Cube(dict):
 
     def top(self, face):
         stred = self.f_str()
-        return '\n'.join([self.order * 2 * ' ' + x for x in stred[face].split('\n')])
+        return '\n'.join([(self.order * 2 + 2) * ' ' + x for x in stred[face].split('\n') + ['-' * (self.order * 2 - 1)]])
 
     def mid(self, faces):
+        right_line = lambda face: '\n'.join([x + ' |' for x in face.split('\n')])
         stred = self.f_str()
-        faces[0] = stred[faces[0]]
-        return reduce(lambda a, b: self.f_zip(a, stred[b]), faces)
+        faces[0] = right_line(stred[faces[0]])
+        faces[1] = right_line(stred[faces[1]])
+        faces[2] = right_line(stred[faces[2]])
+        faces[3] = stred[faces[3]]
+        return reduce(lambda a, b: self.f_zip(a, b), faces)
 
     def bottom(self, face):
         stred = self.f_str()
-        return '\n'.join([self.order * 2 * ' ' + x for x in stred[face].split('\n')])
+        return '\n'.join([(self.order * 2 + 2) * ' ' + x for x in ['-' * (self.order * 2 - 1)] + stred[face].split('\n')])
 
     def f_str(self):
         return {type: str(face) for type, face in self.items()}
@@ -324,29 +347,35 @@ def input_to_turn(inp, order):
             inner = inp[:len(inner)]
             inp = inp[len(inner):]
         else:
-            inspect.getframeinfo(inspect.currentframe()).lineno
             return None
         if not inp or not re.match(r'^(f|b|u|d|r|l|x|y|z|m|e|s)$', inp[0]):
-            inspect.getframeinfo(inspect.currentframe()).lineno
             return None
 
     face = inp[0]
     inp = inp[1:]
+
     if face in "mes":
         inner = str((order // 2) + 1)
-        face = {'m': 'l', 'e': 'd', 's': 'd'}[face]
-    elif len(inner) and int(inner) <= order // 2:
-        inspect.getframeinfo(inspect.currentframe()).lineno
+        face = {'m': 'l', 'e': 'd', 's': 's'}[face]
+    elif len(inner) and int(inner) > (order // 2) + 1: 
         return None
+
+    together = re.match(r'^w', inp)
+    if together:
+        inp = inp[1:]
+        together = 'w'
+    else:
+        together = ''
 
     inp = ''.join(list(map(lambda x: "-" if x in "'`-" else x, inp)))
     if len(inp) and not re.match(r'^2?-?$', inp):
+        print(inspect.getframeinfo(inspect.currentframe()).lineno)
         return None
 
     double = 2 if re.match(r'2', inp) else 1
     direction = '-' if len(inp) and re.match(re.escape("-"), inp[-1]) else '+'
     
-    return {'face': face, 'direction': direction, 'inner': inner, 'double': double}
+    return {'face': face, 'direction': direction, 'inner': inner, 'double': double, 'together': together}
 
 if __name__ == '__main__':
     try:
@@ -368,7 +397,7 @@ if __name__ == '__main__':
                     cube.solve(time = 0.1)
                     continue
                 if inp == 'scramble' or inp == 'scr':
-                    cube.scramble(10, time = 0.1)
+                    cube.scramble(20, time = 0.2)
                     continue
                 if inp == 'turns' or inp == 'tur':
                     print(cube.undo_turn_log)
@@ -383,7 +412,7 @@ if __name__ == '__main__':
                 if not turn:
                     continue
                 for i in range(turn['double']):
-                    cube.turn(turn['face'], turn['direction'], turn['inner'])
+                    cube.turn(turn['face'], turn['direction'], turn['inner'], turn['together'])
 
     except Exception as e:
         print(format_exc())
