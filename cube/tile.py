@@ -17,5 +17,14 @@ class Tile():
         new.char *= mul
         return new
 
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.col == {'r': red, 'g': green, 'b': blue, 'y': yellow, 'w': white, 'o': orange}[other]
+        else:
+            return self.col == other.col
+
     def __str__(self):
+        return self.col(self.char)
+
+    def __repr__(self):
         return self.col(self.char)
