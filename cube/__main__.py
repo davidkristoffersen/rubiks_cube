@@ -9,7 +9,7 @@ if __name__ == '__main__':
         cube = Cube(input("Size of cube: "))
         while 1:
             err = cube.input()
-            if err:
+            if err and not isinstance(err, list):
                 print(err)
                 input()
 
