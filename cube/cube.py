@@ -24,32 +24,38 @@ class Cube(dict):
         o_dict = {face.type: face for face in faces}
         super().__init__(o_dict)
 
-    def scramble(self, num_turns = 100, time = 1):
+    def scramble(self, num_turns = 100, time = 1, do_print = False):
         for i in range(num_turns):
-            bash('clear')
-            print('Scrambling')
-            print(self)
+            if do_print:
+                bash('clear')
+                print('Scrambling')
+                print(self)
             turn = self.random_turn()
             while not turn:
                 turn = self.random_turn()
             for i in range(turn['double']):
                 self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'])
-            sleep(time)
-        bash('clear')
-        print(self)
-
-    def solve(self, time = 1):
-        while self.undo_turn_log:
+            if do_print:
+                sleep(time)
+        if do_print:
             bash('clear')
-            print('Solving')
             print(self)
+
+    def solve(self, time = 1, do_print = False):
+        while self.undo_turn_log:
+            if do_print:
+                bash('clear')
+                print('Solving')
+                print(self)
             turn = self.undo_turn_log.pop()
             turn = input_to_turn(turn, self.order)
             for i in range(turn['double']):
                 self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'], log_undo = False)
-            sleep(time)
-        bash('clear')
-        print(self)
+            if do_print:
+                sleep(time)
+        if do_print:
+            bash('clear')
+            print(self)
 
     def random_turn(self):
         inner = '' if self.order < 4 else str(random.choice(['', random.randint(2, self.order // 2)]))
@@ -251,10 +257,17 @@ class Cube(dict):
     def f_zip(self, a, b): 
         return '\n'.join([' '.join([str(y) for y in x]) for x in list(zip(a.split('\n'), b.split('\n')))])
 
+    def items(self):
+        return [(k, self[k]) for k in ['f', 'l', 'u', 'r', 'd', 'b']]
+
     def to_3d_array(self):
         arr = []
-        for face, value in self.items():
-            arr.append(deepcopy(value))
+        arr.append(deepcopy(self['f']))
+        arr.append(deepcopy(self['l']))
+        arr.append(deepcopy(self['u']))
+        arr.append(deepcopy(self['r']))
+        arr.append(deepcopy(self['d']))
+        arr.append(deepcopy(self['b']))
         return arr
 
     def print_arr(self, arr = None):
@@ -273,10 +286,10 @@ class Cube(dict):
         new = reduce(lambda a, b: self.f_zip(a, b), ret_arr)
         print(new)
 
-    def input(self, inp_raw=''):
+    def input(self, inp_raw='', ask_inp = False):
         if isinstance(inp_raw, list):
             inp_raw = ','.join(inp_raw)
-        if not inp_raw:
+        if not inp_raw and ask_inp:
             bash('clear')
             print(self)
 
