@@ -7,6 +7,7 @@ from .common import *
 from functools import reduce
 import random
 from time import sleep
+from copy import deepcopy
 
 class Cube(dict):
     def __init__(self, order):
@@ -250,7 +251,31 @@ class Cube(dict):
     def f_zip(self, a, b): 
         return '\n'.join([' '.join([str(y) for y in x]) for x in list(zip(a.split('\n'), b.split('\n')))])
 
+    def to_3d_array(self):
+        arr = []
+        for face, value in self.items():
+            arr.append(deepcopy(value))
+        return arr
+
+    def print_arr(self, arr = None):
+        if not arr:
+            arr = self.to_3d_array()
+        ret = ''
+        ret_arr = []
+        for zt, z in enumerate(arr):
+            ret = '\x1b[1m' + str(zt) + '\x1b[m ' + ' ' * len(arr[0]) + '\n'
+            ret += '├─' + ''.join([str(x) for x in range(len(arr[0]))])
+            for yt, y in enumerate(z):
+                ret += '\n' + str(yt) + ' '
+                for xt, x in enumerate(y):
+                    ret += str(x)
+            ret_arr.append(ret)
+        new = reduce(lambda a, b: self.f_zip(a, b), ret_arr)
+        print(new)
+
     def input(self, inp_raw=''):
+        if isinstance(inp_raw, list):
+            inp_raw = ','.join(inp_raw)
         if not inp_raw:
             bash('clear')
             print(self)
@@ -291,3 +316,4 @@ class Cube(dict):
                 continue
             for i in range(turn['double']):
                 self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'])
+        # return self.to_3d_array()
