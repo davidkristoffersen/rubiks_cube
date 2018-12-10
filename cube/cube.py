@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.7
 
-from face import Face
-from tile import Tile
-from common import *
+from .face import Face
+from .tile import Tile
+from .common import *
 
 from functools import reduce
 import random
@@ -10,7 +10,7 @@ from time import sleep
 
 class Cube(dict):
     def __init__(self, order):
-        assert(re.match(r'^\d+$', order))
+        assert(re.match(r'^\d+$', str(order)))
         self.order = int(order)
         self.create()
         self.undo_rotate_log = []
@@ -250,12 +250,13 @@ class Cube(dict):
     def f_zip(self, a, b): 
         return '\n'.join([' '.join([str(y) for y in x]) for x in list(zip(a.split('\n'), b.split('\n')))])
 
-    def input(self):
-        bash('clear')
-        print(self)
+    def input(self, inp_raw=''):
+        if not inp_raw:
+            bash('clear')
+            print(self)
 
-        print('Turn: ', end='')
-        inp_raw = input()
+            print('Turn: ', end='')
+            inp_raw = input()
 
         err = ''
         for inp in [y for x in inp_raw.split(',') for y in x.split(' ') if y]:

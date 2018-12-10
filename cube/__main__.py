@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.7
 
-from __init__ import *
+from . import *
 from traceback import format_exc
 import re
 

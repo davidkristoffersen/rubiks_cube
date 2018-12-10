@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.7
 
-from tile import Tile
-from common import *
+from .tile import Tile
+from .common import *
 
 class Face(list):
     def __init__(self, order, type, col):

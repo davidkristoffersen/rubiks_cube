@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.7
 
-from common import *
+from .common import *
 
 class Tile():
     def __init__(self, char, col):
