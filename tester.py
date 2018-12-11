@@ -38,30 +38,78 @@ def rotate_to_color(cube, col):
             cube.input(v)
             break
 
+def rotate_face_to_face(cube, face_org, face_dest):
+    rotate = {
+        'f': {'r': 'y-','l': 'y', 'u': 'x', 'd': 'x-','b': 'y2','f': ''},
+        'b': {'r': 'y', 'l': 'y-','u': 'x-','d': 'x', 'b': '',  'f': 'y2'},
+        'u': {'r': 'z', 'l': 'z-','u': '',  'd': 'z2','b': 'x', 'f': 'x-'},
+        'd': {'r': 'z-','l': 'z', 'u': 'z2','d': '',  'b': 'x-','f': 'x'},
+        'r': {'r': '',  'l': 'y2','u': 'z-','d': 'z', 'b': 'z-','f': 'z'},
+        'l': {'r': 'y2','l': '',  'u': 'z', 'd': 'z-','b': 'z', 'f': 'z-'}
+    }[face_dest][face_org]
+    cube.input(rotate)
+    if rotate in ['z', 'z-', 'z2']:
+        return {'z': -1, 'z-': 1, 'z2': 2}[rotate]
+    return 0
+
+
+def get_face_by_col(cube, col):
+    for face in ['r', 'l', 'u', 'd', 'b', 'f']:
+        if center_col(cube, face) == col:
+            return face
+
 def solve(cube):
     front_col = 'w'
     def cross():
         def edge(color):
             for face_id, face in cube.items():
-                print(face_id)
-                for y, x in [(0, 1), (1, 0), (1, 2), (2, 1)]:
-                    bro = edge_brother(face_id, face, y, x)
+                rotate_to_face_id(cube, face_id)
+                # print()
+                # print("\x1b[1mFace:", face_id, "\x1b[m")
+                # print(cube)
+                edges = [(0, 1), (1, 2), (2, 1), (1, 0)]
+                for it, (y, x) in enumerate(edges):
+                    bro = edge_brother(y, x)
                     this = face[y][x]
-                    print(this, bro)
-                    if (this == color and bro == 'w') or (this == 'w' and bro == color):
-                        print(this, bro)
+                    # print(bro)
+                    if (this == color and bro == 'w'):
+                        front_face = get_face_by_col(cube, front_col)
+                        print('front_face:', front_face)
+                        print('before rotate_face_to_face:\n',cube)
+                        face_rot = rotate_face_to_face(cube, front_face, 'u')
+                        print('after\n', cube)
+                        print('face_rot:', face_rot, 'y, x', y, x)
+                        y, x = edges[(it + face_rot) % 4]
+                        print('y,x', y, x)
+                        face_id = get_face_by_col(cube, face[1][1])
+                        print('face_id', face_id)
+                        bro = edge_brother(y, x)
+                        this = cube[face_id][y][x]
+                        side = {(0, 1): 'u', (1, 2): 'r', (2, 1): 'd', (1, 0): 'l'}[(y,x)]
+                        if face_id in ['u', 'd']:
+                            if face_id == 'u':
+                                cube.input({'u': ['b', 'l-', 'd', 'l'], 'd': ['f', 'r-', 'f-', 'd-'], 
+                                            'r': ['r', 'b-', 'd2', 'b'], 'l': ['l-', 'b', 'd2', 'b-']}[side])
+                            else:
+                                cube.input({'u': '', 'd': 'd2', 'r': 'd-', 'l': 'd'}[side])
+                            color_face = get_face_by_col(cube, color)
+                            first_turn = {'f': [''], 'r': ['d', 'y'], 'b': ['d2', 'y2'], 'l': ['d-', 'y-']}[color_face]
+                            cube.input(first_turn + ['f2'])
+                        else:
+                            pass
+                        # print("Matches!", this, bro)
+                        # print(cube)
+                rotate_to_color(cube, front_col)
             print()
 
-        def edge_brother(face_id, face, y, x):
-            rotate_to_face_id(cube, face_id)
-            direction = {(0, 1): 'x', (1, 0): 'y', (1, 2): 'y-', (2, 1): 'x-'}[(y,x)]
-            cube.input(direction)
+        def edge_brother(y, x):
+            direction = {(0, 1): 'u', (1, 0): 'l', (1, 2): 'r', (2, 1): 'd'}[(y,x)]
             newy, newx = {(0, 1): (2, 1), (1, 0): (1, 2), (1, 2): (1, 0), (2, 1): (0, 1)}[(y, x)]
-            tile = face[newy][newx]
-            rotate_to_color(cube, front_col)
+            tile = cube[direction][newy][newx]
             return tile
 
         rotate_to_color(cube, front_col)
+        print(cube)
         edge('r')
     cross()
 
