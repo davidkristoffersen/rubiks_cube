@@ -6,9 +6,9 @@ import re
 
 if __name__ == '__main__':
     try:
-        cube = Cube(input("Size of cube: "))
+        cube = Cube(input("Size of cube: "), time=0.05, do_print = True)
         while 1:
-            err = cube.input()
+            err = cube.input(ask_inp = True)
             if err and not isinstance(err, list):
                 print(err)
                 input()

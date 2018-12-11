@@ -10,13 +10,15 @@ from time import sleep
 from copy import deepcopy
 
 class Cube(dict):
-    def __init__(self, order):
+    def __init__(self, order, time = 1, do_print = False):
         assert(re.match(r'^\d+$', str(order)))
         self.order = int(order)
         self.create()
         self.undo_rotate_log = []
         self.undo_turn_log = []
         self.turns = [['f', 'b', 'u', 'd', 'r', 'l', 'm', 'e', 's'], ['', '2'], ['', '-']]
+        self.time = time
+        self.do_print = do_print
 
     def create(self):
         face_maps = {'f': red, 'r': green, 'l': blue, 'u': yellow, 'b': orange, 'd': white}
@@ -24,9 +26,9 @@ class Cube(dict):
         o_dict = {face.type: face for face in faces}
         super().__init__(o_dict)
 
-    def scramble(self, num_turns = 100, time = 1, do_print = False):
+    def scramble(self, num_turns = 100):
         for i in range(num_turns):
-            if do_print:
+            if self.do_print:
                 bash('clear')
                 print('Scrambling')
                 print(self)
@@ -35,15 +37,15 @@ class Cube(dict):
                 turn = self.random_turn()
             for i in range(turn['double']):
                 self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'])
-            if do_print:
-                sleep(time)
-        if do_print:
+            if self.do_print:
+                sleep(self.time)
+        if self.do_print:
             bash('clear')
             print(self)
 
-    def solve(self, time = 1, do_print = False):
+    def solve(self):
         while self.undo_turn_log:
-            if do_print:
+            if self.do_print:
                 bash('clear')
                 print('Solving')
                 print(self)
@@ -51,9 +53,9 @@ class Cube(dict):
             turn = input_to_turn(turn, self.order)
             for i in range(turn['double']):
                 self.turn(turn['face'], turn['direction'], turn['inner'], turn['together'], log_undo = False)
-            if do_print:
-                sleep(time)
-        if do_print:
+            if self.do_print:
+                sleep(self.time)
+        if self.do_print:
             bash('clear')
             print(self)
 
@@ -317,10 +319,10 @@ class Cube(dict):
                 print(self)
                 continue
             if inp == 'solve' or inp == 'sol':
-                self.solve(time = 0)
+                self.solve()
                 continue
             if inp == 'scramble' or inp == 'scr':
-                self.scramble(200, time = 0)
+                self.scramble(200)
                 continue
             if inp == 'turns' or inp == 'tur':
                 print(self.undo_turn_log)
