@@ -243,8 +243,11 @@ class Cube(dict):
         stred = self.f_str()
         faces[0] = right_line(stred[faces[0]])
         faces[1] = right_line(stred[faces[1]])
-        faces[2] = right_line(stred[faces[2]])
-        faces[3] = stred[faces[3]]
+        if len(faces) == 4:
+            faces[2] = right_line(stred[faces[2]])
+            faces[3] = stred[faces[3]]
+        else:
+            faces[2] = stred[faces[2]]
         return reduce(lambda a, b: self.f_zip(a, b), faces)
 
     def bottom(self, face):
