@@ -64,43 +64,42 @@ def solve(cube):
         def edge(color):
             for face_id, face in cube.items():
                 rotate_to_face_id(cube, face_id)
-                # print()
-                # print("\x1b[1mFace:", face_id, "\x1b[m")
-                # print(cube)
+                brk = False
                 edges = [(0, 1), (1, 2), (2, 1), (1, 0)]
                 for it, (y, x) in enumerate(edges):
                     bro = edge_brother(y, x)
                     this = face[y][x]
-                    # print(bro)
                     if (this == color and bro == 'w'):
                         front_face = get_face_by_col(cube, front_col)
-                        print('front_face:', front_face)
-                        print('before rotate_face_to_face:\n',cube)
                         face_rot = rotate_face_to_face(cube, front_face, 'u')
-                        print('after\n', cube)
-                        print('face_rot:', face_rot, 'y, x', y, x)
                         y, x = edges[(it + face_rot) % 4]
-                        print('y,x', y, x)
                         face_id = get_face_by_col(cube, face[1][1])
-                        print('face_id', face_id)
-                        bro = edge_brother(y, x)
-                        this = cube[face_id][y][x]
-                        side = {(0, 1): 'u', (1, 2): 'r', (2, 1): 'd', (1, 0): 'l'}[(y,x)]
                         if face_id in ['u', 'd']:
+                            side = {(0, 1): 'u', (1, 2): 'r', (2, 1): 'd', (1, 0): 'l'}[(y,x)]
                             if face_id == 'u':
                                 cube.input({'u': ['b', 'l-', 'd', 'l'], 'd': ['f', 'r-', 'f-', 'd-'], 
                                             'r': ['r', 'b-', 'd2', 'b'], 'l': ['l-', 'b', 'd2', 'b-']}[side])
                             else:
                                 cube.input({'u': '', 'd': 'd2', 'r': 'd-', 'l': 'd'}[side])
+                                cube.input(['f', 'l', 'd', 'l-', 'd-', 'f-', 'd'])
                             color_face = get_face_by_col(cube, color)
-                            first_turn = {'f': [''], 'r': ['d', 'y'], 'b': ['d2', 'y2'], 'l': ['d-', 'y-']}[color_face]
+                            first_turn = {'f': [''], 'r': ['d', 'y-'], 'b': ['d2', 'y2'], 'l': ['d-', 'y']}[color_face]
                             cube.input(first_turn + ['f2'])
                         else:
-                            pass
-                        # print("Matches!", this, bro)
-                        # print(cube)
+                            if face_id == 'b':
+                                y, x = edges[(it + 2) % 4]
+                            cube.input({'b': 'y2', 'r': 'y-', 'f': '', 'l': 'y'}[face_id])
+                            side = {(0, 1): 'u', (1, 2): 'r', (2, 1): 'd', (1, 0): 'l'}[(y,x)]
+                            cube.input({'u': ['f2'], 'd': [''], 
+                                        'r': ['f', 'd', 'f-' ,'d-'], 'l': ['f-', 'd-', 'f', 'd']}[side])
+                            color_face = get_face_by_col(cube, color)
+                            first_turn = {'f': [''], 'r': ['d', 'y-'], 'b': ['d2', 'y2'], 'l': ['d-', 'y']}[color_face]
+                            cube.input(first_turn + ['f2'])
+                        brk = True
+                        break
                 rotate_to_color(cube, front_col)
-            print()
+                if brk:
+                    break
 
         def edge_brother(y, x):
             direction = {(0, 1): 'u', (1, 0): 'l', (1, 2): 'r', (2, 1): 'd'}[(y,x)]
@@ -109,8 +108,10 @@ def solve(cube):
             return tile
 
         rotate_to_color(cube, front_col)
-        print(cube)
         edge('r')
+        edge('b')
+        edge('o')
+        edge('g')
     cross()
 
 if __name__ == '__main__':
@@ -120,10 +121,12 @@ if __name__ == '__main__':
 
     # checker_board(cube)
     # benchmark(cube)
-
     cube.scramble()
-    print(cube)
+    # print(cube)
     solve(cube)
-    cube.print_arr()
-    print()
+    # cube.print_arr()
+    # print()
     print(cube)
+    # cube.input('turns')
+    # cube.solve()
+    # print(cube)
