@@ -43,7 +43,7 @@ class Cube(dict):
             bash('clear')
             print(self)
 
-    def solve(self):
+    def _solve(self):
         while self.undo_turn_log:
             if self.do_print:
                 bash('clear')
@@ -319,7 +319,7 @@ class Cube(dict):
                 print(self)
                 continue
             if inp == 'solve' or inp == 'sol':
-                self.solve()
+                self._solve()
                 continue
             if inp == 'scramble' or inp == 'scr':
                 self.scramble(200)
