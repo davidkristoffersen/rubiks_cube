@@ -68,9 +68,9 @@ class Cube(dict):
         inp = inner + face + together + double + direction
         return input_to_turn(inp, self.order)
 
-    def turn_s(self, undo):
+    def turn_s(self, undo, direction, together):
         self.turn('x', '+', '', '', log_undo = undo)
-        self.turn('d', '+', str((self.order // 2) + 1), '', log_undo = undo)
+        self.turn('d', direction, str((self.order // 2) + 1), together, log_undo = undo)
         self.turn('x', '-', '', '', log_undo = undo)
 
     def turn_w(self, face, direction, inner, undo):
@@ -82,7 +82,7 @@ class Cube(dict):
 
     def turn(self, face, direction, inner, together, log_undo = True):
         if face == 's':
-            self.turn_s(log_undo)
+            self.turn_s(log_undo, direction, together)
             return
         if together == 'w':
             self.turn_w(face, direction, inner, log_undo)
