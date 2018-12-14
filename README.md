@@ -36,7 +36,7 @@ $ ./example.py
 
 ## Authors
 
-* **David Kristoffersen** - *Initial work* - [cube_ai](https://github.com/davidkristoffersen)
+* **David Kristoffersen** - *Initial work* - [rubiks_cube](https://github.com/davidkristoffersen)
 
 ## License
 
