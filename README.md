@@ -1,6 +1,6 @@
 # Rubik's Cube
 
-Rubik's cube is a `python` module for creating and manipulating a rubik's cube of size `n`
+Rubik's cube is a `python` module for creating and manipulating a cli rubik's cube of size `n`
 
 ## Prerequisites
 
