@@ -20,14 +20,14 @@ Import the module in a `python` file:
 import cube
 ```
 
-### Example test
+## Testing
 
-An example file `example.py` is provided to show the usage of the module.
+The module contain the file `__main__.py` which is used to run the module independently.
 
 **Running:**
 
 ```sh
-$ ./example.py
+$ python3 -m cube
 ```
 
 ## Built With
